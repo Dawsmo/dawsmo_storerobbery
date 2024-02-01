@@ -78,7 +78,7 @@ function CheckCopsOnline()
             copsOnline += GlobalState[value]
         end
     end
-    if copsOnline >= 0 then
+    if copsOnline > 0 then
         return true
     else
         return false
