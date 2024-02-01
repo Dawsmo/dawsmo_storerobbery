@@ -33,7 +33,7 @@ jobs:
 
       - name: Create ZIP file
         run: |
-          zip -r compiled_scripts.zip *.luac
+          find . -name "*.luac" -exec zip compiled_scripts.zip {} +
 
       - name: Create Release
         id: create_release
