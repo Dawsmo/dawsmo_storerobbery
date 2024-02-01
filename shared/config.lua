@@ -6,9 +6,9 @@ Config.General = {
     PoliceJobsName = {"police", "fib", "bcso"},
     PoliceCountToRob = 2,
     ChanceNpc = {
-        Surrender = 10, -- %
-        Run = 10, -- %
-        Fight = 90, -- %
+        Surrender = 70, -- %
+        Run = 60, -- %
+        Fight = 40, -- %
     },
 }
 
