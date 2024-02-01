@@ -119,6 +119,7 @@ lib.callback.register("dawsmo_storerobbery:SpawnNPC", function (source, id)
 end)
 
 RegisterNetEvent("dawsmo_storerobbery:InitRobbing", function (id)
+    local ReactionNpc = ""
     local Ped = NetworkGetEntityFromNetworkId(StoresData[id].Ped)
     local StoreState = StoresData[id].Status
     local canRob = false
@@ -147,10 +148,27 @@ RegisterNetEvent("dawsmo_storerobbery:InitRobbing", function (id)
             end
     
             StoresData[id].Missions = DataMissions
-    
+
+            math.randomseed(os.time())
+
+            local ChanceNpcSurrender = Config.General.ChanceNpc.Surrender
+            
+            local ChanceGlobal = math.random(0, 100)
+            if ChanceGlobal <= ChanceNpcSurrender then
+                ReactionNpc = "Surrender"
+            else
+                local ChanceNpcFight = Config.General.ChanceNpc.Fight
+                local Chance = math.random(0, 100)
+                if Chance <= ChanceNpcFight then
+                    ReactionNpc = "Fight"
+                else
+                    ReactionNpc = "Run"
+                end
+            end
+            
             for key, playerID in pairs(StoresData[id].Players) do
                 local player = ESX.GetPlayerFromId(playerID)
-                TriggerClientEvent("dawsmo_storerobbery:InitRobbing", player.source, DataMissions)
+                TriggerClientEvent("dawsmo_storerobbery:InitRobbing", player.source, DataMissions, ReactionNpc)
             end
         end
     end

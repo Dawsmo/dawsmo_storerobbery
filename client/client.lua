@@ -2,8 +2,9 @@ lib.locale()
 local currentShopKeeper = nil
 local ui = false
 local StoreID = 0
-local RobId = 0
+local Robbing = false
 local zoneRobbing = {}
+local markers = {}
 local safeObject = nil
 
 RegisterNetEvent('esx:playerLoaded')
@@ -54,7 +55,7 @@ RegisterNetEvent("dawsmo_storerobbery:ClearRobbing", function ()
     ui = false
     currentShopKeeper = nil
     StoreID = 0
-    RobId = 0
+    Robbing = false
     SendNUIMessage({
         showUI = false,
         update = false,
@@ -71,6 +72,7 @@ RegisterNetEvent("dawsmo_storerobbery:ClearRobbing", function ()
     for key, zone in pairs(zoneRobbing) do
         zone:remove()
     end
+    markers = {}
     zoneRobbing = {}
     if DoesEntityExist(safeObject) then
         DeleteEntity(safeObject)
@@ -149,10 +151,11 @@ function CreateMission()
     end
 
     for NameLoots, ValueLoots in pairs(Config.Stores[StoreID].Loots) do
+        markers[NameLoots] = markers[NameLoots] or {}
         for key, value in pairs(ValueLoots) do
 
             function onEnter(self)
-                lib.showTextUI(Config.RobData[self.type].Message)
+                lib.showTextUI(Config.RobData[self.type].Message, {position = "top-center",})
             end
              
             function onExit(self)
@@ -165,6 +168,7 @@ function CreateMission()
                     if Robbed then
                         self:remove()
                         lib.hideTextUI()
+                        table.remove(markers[self.type], self.lootId)
                         lib.notify({
                             title = locale("Already_Robbed_Title"),
                             type = 'inform',
@@ -174,7 +178,7 @@ function CreateMission()
                     else
                         if self.type == "CashRegister" then
                             if IsPedArmed(PlayerPedId(), 7) then
-                                RobRegister(self.lootId)
+                                RobRegister(self.lootId, self)
                             else
                                 lib.notify({
                                     title = locale("Need_Weapon_Title"),
@@ -184,9 +188,9 @@ function CreateMission()
                                 })
                             end
                         elseif self.type == "StoreShelves" then
-                            RobShelves(self.lootId)
+                            RobShelves(self.lootId, self)
                         elseif self.type == "Safe" then
-                            RobSafe(self.lootId)
+                            RobSafe(self.lootId, self)
                         end
                     end
                 end
@@ -203,9 +207,12 @@ function CreateMission()
                 lootId = key
             })
             table.insert(zoneRobbing, sphere)
+            markers[NameLoots][key] = value.Coords
         end
     end
 end
+
+
 
 RegisterNetEvent("dawsmo_storerobbery:SpawnNPC", function (entity)
     currentShopKeeper = NetworkGetEntityFromNetworkId(entity)
@@ -223,22 +230,42 @@ RegisterNetEvent("dawsmo_storerobbery:SpawnNPC", function (entity)
     end
 end)
 
-RegisterNetEvent("dawsmo_storerobbery:InitRobbing", function (RobData)
-    CreateMission()
-    TriggerEvent("dawsmo_storerobbery:ShowUI", RobData, false)
-    lib.requestAnimDict('missheist_agency2ahands_up')
-    TaskPlayAnim(currentShopKeeper, "missheist_agency2ahands_up", "handsup_anxious", 8.0, -8.0, -1, 1, 0, false, false, false)
-    Wait(1500)
-    TaskGoStraightToCoord(currentShopKeeper, Config.Stores[StoreID].PositionNPC.Coords, 2.0, -1, Config.Stores[StoreID].PositionNPC.Heading, 0.0)
-    Wait(5000)
-    lib.requestAnimDict('missheist_agency2ahands_up')
-    TaskPlayAnim(currentShopKeeper, "missheist_agency2ahands_up", "handsup_anxious", 8.0, -8.0, -1, 1, 0, false, false, false)
-    if #RobData["Safe"] > 0 then
-        CreateForcePinZone()
-    end
+RegisterNetEvent("dawsmo_storerobbery:InitRobbing", function (RobData, Reaction)
+    Citizen.CreateThread(function ()
+        CreateMission()
+        TriggerEvent("dawsmo_storerobbery:ShowUI", RobData, false)
+        lib.requestAnimDict('missheist_agency2ahands_up')
+        TaskPlayAnim(currentShopKeeper, "missheist_agency2ahands_up", "handsup_anxious", 8.0, -8.0, -1, 1, 0, false, false, false)
+        Wait(1500)
+        if Reaction == "Surrender" then
+            TaskGoStraightToCoord(currentShopKeeper, Config.Stores[StoreID].PositionNPC.Coords, 2.0, -1, Config.Stores[StoreID].PositionNPC.Heading, 0.0)
+            Wait(5000)
+            lib.requestAnimDict('missheist_agency2ahands_up')
+            TaskPlayAnim(currentShopKeeper, "missheist_agency2ahands_up", "handsup_anxious", 8.0, -8.0, -1, 1, 0, false, false, false)
+            if #RobData["Safe"] > 0 then
+                CreateForcePinZone()
+            end
+        elseif Reaction == "Fight" then
+            ClearPedTasksImmediately(currentShopKeeper)
+            GiveWeaponToPed(currentShopKeeper, GetHashKey("WEAPON_PISTOL"), 255, false, true)
+            TaskCombatPed(currentShopKeeper ,PlayerPedId(), 0, 16)
+            SetPedCombatAttributes(currentShopKeeper, false)
+            SetPedFleeAttributes(currentShopKeeper, 0, false)
+            SetPedCombatAttributes(currentShopKeeper, 16, true)
+            SetPedCombatAttributes(currentShopKeeper, 46, true)
+            SetPedCombatAttributes(currentShopKeeper, 26, true)
+            SetPedSeeingRange(currentShopKeeper, 75.0)
+            SetPedHearingRange(currentShopKeeper, 50.0)
+            SetPedEnableWeaponBlocking(currentShopKeeper, true)
+        else
+            TaskSmartFleePed(currentShopKeeper, PlayerPedId(), 100.0, -1, false, false)
+        end
+        Robbing = true
+        ShowMarkers()
+    end)
 end)
 
-function RobRegister(id)
+function RobRegister(id, zone)
     lib.hideTextUI()
     lib.callback.await("dawsmo_storerobbery:CheckRobLoot", false, StoreID, "CashRegister", id, "Set")
     if lib.progressBar({
@@ -280,6 +307,10 @@ function RobRegister(id)
             },
         }) 
         then 
+            Wait(250)
+            zone:remove()
+            Wait(250)
+            table.remove(markers["CashRegister"], id)
             PlaySoundFrontend(-1, 'ROBBERY_MONEY_TOTAL', 'HUD_FRONTEND_CUSTOM_SOUNDSET', true)
             TriggerServerEvent("dawsmo_storerobbery:Rewards", StoreID, "CashRegister", id)
         else 
@@ -290,7 +321,7 @@ function RobRegister(id)
     end
 end
 
-function RobShelves(id)
+function RobShelves(id, zone)
     lib.hideTextUI()
     lib.callback.await("dawsmo_storerobbery:CheckRobLoot", false, StoreID, "StoreShelves", id, "Set")
 
@@ -312,13 +343,17 @@ function RobShelves(id)
         },
     }) 
     then
+        Wait(250)
+        zone:remove()
+        Wait(250)
+        table.remove(markers["StoreShelves"], id)
         TriggerServerEvent("dawsmo_storerobbery:Rewards", StoreID, "StoreShelves", id)
     else
         lib.print.warn('When trying to earn the money')
     end
 end
 
-function RobSafe(id)
+function RobSafe(id, zone)
     local ItemForceSafe = false
     local ItemForcePin = false
     if exports.ox_inventory:Search("count", Config.RobData["Safe"].ForceSafe.Item) >= 1 then
@@ -362,7 +397,7 @@ function RobSafe(id)
                     },
                 }) 
                 then
-                    GrabMoneySafe()
+                    GrabMoneySafe(id, zone)
                 else
                     lib.print.warn('When trying to earn the money')
                 end
@@ -374,7 +409,7 @@ function RobSafe(id)
             icon = 'vault',
             disabled = not ItemForcePin,
             onSelect = function()
-                OpenSafePin(true, id)
+                OpenSafePin(true, id, zone)
             end,
           },
           {
@@ -382,7 +417,7 @@ function RobSafe(id)
             description = locale("Menu_Safe_Option_EnterPin_Desc"),
             icon = 'key',
             onSelect = function()
-                OpenSafePin(false, id)
+                OpenSafePin(false, id, zone)
             end,
           },
         }
@@ -390,10 +425,9 @@ function RobSafe(id)
     lib.showContext('dawsmo_storerobbery:Safe')
 end
 
-function OpenSafePin(Forcing, Id)
+function OpenSafePin(Forcing, Id, Zone)
     local Open = false
     local code = lib.callback.await("dawsmo_storerobbery:GetSafeCode", false, StoreID)
-    print(code)
     if Forcing then
         lib.showTextUI('**[Q]** pour pivoter à gauche  \n**[D]** pour pivoter à droite  \n**[F]** Pour valider  \n**[X]** Pour arrêter le crochetage', Config.RobData["Safe"].SafeTextUI)
         Open = exports["pd-safe"]:createSafe(code, Forcing)
@@ -409,11 +443,12 @@ function OpenSafePin(Forcing, Id)
     end
     if Open then
         lib.callback.await("dawsmo_storerobbery:CheckRobLoot", false, StoreID, "Safe", Id, "Set")
-        GrabMoneySafe(id)
+        GrabMoneySafe(id, Zone)
     end
 end
 
-function GrabMoneySafe(id)
+function GrabMoneySafe(id, zone)
+    lib.hideTextUI()
     if lib.progressBar({
         duration = Config.RobData["Safe"].TimeForGrabMoney,
         label = Config.RobData["Safe"].Description,
@@ -432,6 +467,10 @@ function GrabMoneySafe(id)
         },
     }) 
     then
+        Wait(250)
+        zone:remove()
+        Wait(250)
+        table.remove(markers["Safe"], id)
         TriggerServerEvent("dawsmo_storerobbery:Rewards", StoreID, "Safe", id)
     else
         lib.print.warn('When trying to earn the money')
@@ -531,4 +570,15 @@ function isNotPolice()
         end
     end
     return isAutorised
+end
+
+function ShowMarkers()
+    while Robbing do
+        Wait(0)
+        for NameLoots, Value in pairs(markers) do
+            for key, value in pairs(Value) do
+                DrawMarker(1, value.x, value.y, value.z - 0.98, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.25, 255, 255, 255, 100, false, true, 2, false, false, false, false)
+            end
+        end
+    end
 end
