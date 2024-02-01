@@ -199,7 +199,7 @@ function CreateMission()
             local sphere = lib.zones.sphere({
                 coords = value.Coords,
                 radius = 0.5,
-                debug = true,
+                debug = false,
                 inside = inside,
                 onEnter = onEnter,
                 onExit = onExit,
