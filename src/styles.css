@@ -1,0 +1,62 @@
+body {
+    padding: 0;
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+    font-family: 'Roboto', sans-serif;
+}
+
+.menu-container {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    position: fixed;
+    top: 50%;
+    right: 20px; /* Ajustez cette valeur selon vos besoins */
+    transform: translateY(-50%);
+    padding: 20px;
+    background-color: #dbdbdb;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+
+.store-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center; /* Centrer le texte horizontalement */
+}
+
+.store-info img {
+    width: 50px; /* Ajustez la taille du logo du magasin en fonction de vos besoins */
+    margin-bottom: 10px; /* Ajout d'un espace sous le logo */
+}
+
+.separator {
+    width: 100%; /* Largeur totale du conteneur parent */
+    height: 1px; /* Hauteur de la ligne de séparation */
+    background-color: #ccc; /* Couleur de la ligne de séparation */
+    margin: 10px 0; /* Marge au-dessus et en dessous de la ligne de séparation */
+}
+
+.quest-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.quest-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.quest-item img {
+    width: 48px; /* Ajustez la taille des icônes des objectifs en fonction de vos besoins */
+    margin-right: 10px;
+}
+
+.quest-progress {
+    font-weight: bold;
+}
