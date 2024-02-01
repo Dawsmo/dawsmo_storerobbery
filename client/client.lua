@@ -430,7 +430,7 @@ function OpenSafePin(Forcing, Id, Zone)
     local code = lib.callback.await("dawsmo_storerobbery:GetSafeCode", false, StoreID)
     if Forcing then
         lib.showTextUI('**[Q]** pour pivoter à gauche  \n**[D]** pour pivoter à droite  \n**[F]** Pour valider  \n**[X]** Pour arrêter le crochetage', Config.RobData["Safe"].SafeTextUI)
-        Open = exports["pd-safe"]:createSafe(code, Forcing)
+        Open = exports["pd-safe"]:createSafe(code)
     else
         local input = lib.inputDialog('Code du coffre', {
             {type = 'number', label = 'Code #1', icon = 'hashtag', required = true},
