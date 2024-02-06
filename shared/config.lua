@@ -31,7 +31,7 @@ Config.RobData = {
             TimeForRob = 16500, -- milliseconds
         },
         Rewards = {
-            ["black_money"] = {min = 1, max = 100, label = "Argent sale"}
+            ["black_money"] = {min = 250, max = 500, label = "Argent sale"}
         },
     },
     ["StoreShelves"] = {
@@ -40,18 +40,16 @@ Config.RobData = {
         TimeForRob = 15000, -- milliseconds
         Rewards = {
             ["clothes"] = {
-                ["black_money"] = {min = 1, max = 100, label = "Argent sale"}
+                ["drug_brick"] = {min = 1, max = 1, label = "Matière première"}
             },
             ["tattoo"] = {
-                ["black_money"] = {min = 1, max = 100, label = "Argent sale"}
+                ["drug_brick"] = {min = 1, max = 1, label = "Matière première"}
             },
             ["barber"] = {
-                ["black_money"] = {min = 1, max = 100, label = "Argent sale"}
+                ["drug_brick"] = {min = 1, max = 1, label = "Matière première"}
             },
             ["grocery"] = {
-                ["black_money"] = {min = 1, max = 100, label = "Argent sale"},
-                ["money"] = {min = 1, max = 100, label = "Argent"},
-                ["cigare"] = {min = 1, max = 100, label = "Cigare"}
+                ["drug_brick"] = {min = 1, max = 1, label = "Matière première"},
             }
         },
     },
@@ -77,7 +75,7 @@ Config.RobData = {
             Item = "blowtorch",
         },
         Rewards = {
-            ["black_money"] = {min = 1, max = 100, label = "Argent sale"}
+            ["black_money"] = {min = 1500, max = 2000, label = "Argent sale"}
         },
     }
 }

@@ -278,7 +278,7 @@ function RobRegister(id, zone)
             move = true,
             sprint = true,
             combat = true,
-            mouse = true
+            mouse = false
         },
         anim = {
             dict = "melee@large_wpn@streamed_core",
@@ -299,7 +299,7 @@ function RobRegister(id, zone)
                 move = true,
                 sprint = true,
                 combat = true,
-                mouse = true
+                mouse = false
             },
             anim = {
                 dict = "oddjobs@shop_robbery@rob_till",
@@ -335,7 +335,7 @@ function RobShelves(id, zone)
             move = true,
             sprint = true,
             combat = true,
-            mouse = true
+            mouse = false
         },
         anim = {
             dict = "anim@scripted@heist@ig1_table_grab@gold@male@",
@@ -459,7 +459,7 @@ function GrabMoneySafe(id, zone)
             move = true,
             sprint = true,
             combat = true,
-            mouse = true
+            mouse = false
         },
         anim = {
             dict = "anim@scripted@heist@ig1_table_grab@gold@male@",
