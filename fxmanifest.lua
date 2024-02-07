@@ -41,3 +41,8 @@ files {
     "src/script.js",
     "src/img/*",
 }
+
+escrow_ignore {
+    "shared/config.lua",
+    "server/sv_config.lua",
+}

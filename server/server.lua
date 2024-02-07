@@ -49,6 +49,7 @@ RegisterNetEvent("dawsmo_storerobbery:InitStoresData", function (id, type)
     local xPlayer = ESX.GetPlayerFromId(source)
     if type == "Enter" then
         if StoresData[id] == nil then
+            SVConfig.LogData[id] = {Players = {}, Missions = {}}
             StoresData[id] = {Ped = 0, Players = {}, Missions = {}, Status = "Clear", Timer = 0}
             table.insert(StoresData[id].Players, source)
         elseif StoresData[id].Status == "Clear" then
@@ -77,6 +78,9 @@ RegisterNetEvent("dawsmo_storerobbery:InitStoresData", function (id, type)
             end
         end
         if #StoresData[id].Players <= 0 then
+            Wait(500)
+            SVConfig.LogData[id].Missions = StoresData[id].Missions
+            SendLog(id)
             local Ped = NetworkGetEntityFromNetworkId(StoresData[id].Ped)
             if DoesEntityExist(Ped) then
                 DeleteEntity(Ped)
@@ -169,6 +173,7 @@ RegisterNetEvent("dawsmo_storerobbery:InitRobbing", function (id)
             for key, playerID in pairs(StoresData[id].Players) do
                 local player = ESX.GetPlayerFromId(playerID)
                 TriggerClientEvent("dawsmo_storerobbery:InitRobbing", player.source, DataMissions, ReactionNpc)
+                table.insert(SVConfig.LogData[id].Players, player.getName())
             end
         end
     end
@@ -243,3 +248,41 @@ RegisterNetEvent("dawsmo_storerobbery:Rewards", function (StoreID, type, id)
         end
     end
 end)
+
+function SendLog(id)
+    if SVConfig.LogData[id] then
+        local Mission = SVConfig.LogData[id].Missions
+        local Players = SVConfig.LogData[id].Players
+        local MissionData = ""
+        local PlayersData = ""
+        for Name, Value in pairs(Mission) do
+            local count = 0
+            for Id, RobData in pairs(Mission[Name]) do
+                if RobData.robbed then
+                    count += 1
+                end
+            end
+            MissionData = MissionData .. ("\n > - %s :  %s"):format(Name, count)
+        end
+        for _,Name in pairs(Players) do
+            PlayersData = PlayersData .. ("\n > - %s"):format(Name)
+        end
+        local LogMessage = ("Braquage ID: \n > %s \n Joueur: %s \n Gains: %s"):format(id, PlayersData, MissionData)
+        Wait(500)
+        local embedData = { {
+            ['title'] = SVConfig.Log.title,
+            ['color'] = SVConfig.Log.color,
+            ['footer'] = {
+                ['text'] = "Dawsmo Store Robbery " .. os.date(),
+            },
+            ['description'] = LogMessage,
+        } }
+        PerformHttpRequest(SVConfig.Log.discord, nil, 'POST', json.encode({
+            username = SVConfig.Log.botName,
+            embeds = embedData
+        }), {
+            ['Content-Type'] = 'application/json'
+        })
+        SVConfig.LogData[id] = {Players = {}, Missions = {}}
+    end
+end
