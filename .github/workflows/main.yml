@@ -1,0 +1,55 @@
+name: Obfuscate and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Obfuscate JavaScript
+        run: |
+          npm install -g uglify-js
+          uglifyjs src/script.js -c -m -o src/obfuscated_script.js
+
+      - name: Rename obfuscated script
+        run: |
+          mv src/obfuscated_script.js src/script.js
+
+      - name: Create ZIP file
+        run: |
+          zip -r dawsmo_storerobbery_release.zip fxmanifest.lua client/client.lua client/custom.lua locales/fr.json locales/en.json server/server.lua server/sv_config.lua shared/utils.lua shared/config.lua shared/config_stores.lua shared/stores_exemple.lua src/index.html src/script.js src/styles.css src/img/*
+
+      - name: Delete
+        uses: ame-yu/action-delete-latest-release@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v1.0.0
+          release_name: Release v1.0.0
+          body: |
+            Obfuscated JavaScript script
+          draft: false
+          prerelease: false
+
+      - name: Upload ZIP file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dawsmo_storerobbery_release.zip
+          asset_name: dawsmo_cstorerobbery_release.zip
+          asset_content_type: application/zip
