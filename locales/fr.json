@@ -30,5 +30,9 @@
     "Config_Safe_Message": "[E] Pour voler le coffre",
     "Config_Safe_Grab": "Récupération de l'argent du coffre",
     "Config_Safe_ForcePin": "Forçage du code du coffre",
-    "Config_Safe_ForceSafe": "Forçage du coffre"
+    "Config_Safe_ForceSafe": "Forçage du coffre",
+    "CashRegister": "Caisses",
+    "StoreShelves": "Rayons",
+    "Safe": "Coffre",
+    "LogDiscord": "Braquage ID: \n > %s \n Joueur: %s \n Gains: %s"
 }

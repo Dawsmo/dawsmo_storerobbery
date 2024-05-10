@@ -79,14 +79,14 @@ RegisterNetEvent("dawsmo_storerobbery:InitStoresData", function (id, type)
         end
         if #StoresData[id].Players <= 0 then
             Wait(500)
-            SVConfig.LogData[id].Missions = StoresData[id].Missions
-            SendLog(id)
             local Ped = NetworkGetEntityFromNetworkId(StoresData[id].Ped)
             if DoesEntityExist(Ped) then
                 DeleteEntity(Ped)
                 StoresData[id].Ped = 0
             end
             if StoresData[id].Status == "Robbing" then
+                SVConfig.LogData[id].Missions = StoresData[id].Missions
+                SendLog(id)
                 StoresData[id].Missions = {}
                 StoresData[id].Status = "Robbed"
                 StoresData[id].Timer = os.time()
@@ -97,10 +97,10 @@ end)
 
 lib.callback.register("dawsmo_storerobbery:SpawnNPC", function (source, id)
     local canRob, timer = CheckTimer(id)
-    if StoresData[id].Ped == 0 then
-        local model = Config.Shopkeepers[Config.Stores[id].Type]
-        local coords = vector3(Config.Stores[id].Coords) 
-        local Heading = Config.Stores[id].Heading
+    if StoresData[id].Ped == 0 or nil then
+        local model = Config.Shopkeepers[Store.Stores[id].Type]
+        local coords = vector3(Store.Stores[id].Coords) 
+        local Heading = Store.Stores[id].Heading
         ESX.OneSync.SpawnPed(model,coords, Heading, function(NetId)
             Wait(250)
             local Ped = NetworkGetEntityFromNetworkId(NetId)
@@ -137,7 +137,7 @@ RegisterNetEvent("dawsmo_storerobbery:InitRobbing", function (id)
             Entity(Ped).state.canBeForcedPin = true
             local DataMissions = {}
     
-            for NameLoot, ValueLoots in pairs(Config.Stores[id].Loots) do
+            for NameLoot, ValueLoots in pairs(Store.Stores[id].Loots) do
                 local lootData = {}
                 for _, lootInfo in ipairs(ValueLoots) do
                     local lootEntry = {robbed = false}
@@ -219,7 +219,7 @@ RegisterNetEvent("dawsmo_storerobbery:Rewards", function (StoreID, type, id)
     local xPlayer = ESX.GetPlayerFromId(source)
     if StoresData[StoreID].Missions ~= nil then
         if type == "StoreShelves" then
-            local storeType = Config.Stores[StoreID].Type
+            local storeType = Store.Stores[StoreID].Type
             for item, value in pairs(Config.RobData[type].Rewards[storeType]) do
                 local randomAmount = math.random(value.min, value.max)
                 if exports.ox_inventory:CanCarryItem(xPlayer.source, item, randomAmount) then
@@ -262,12 +262,12 @@ function SendLog(id)
                     count += 1
                 end
             end
-            MissionData = MissionData .. ("\n > - %s :  %s"):format(Name, count)
+            MissionData = MissionData .. ("\n > - %s :  %s"):format(locale(Name), count)
         end
         for _,Name in pairs(Players) do
             PlayersData = PlayersData .. ("\n > - %s"):format(Name)
         end
-        local LogMessage = ("Braquage ID: \n > %s \n Joueur: %s \n Gains: %s"):format(id, PlayersData, MissionData)
+        local LogMessage = (locale("LogDiscord")):format(id, PlayersData, MissionData)
         Wait(500)
         local embedData = { {
             ['title'] = SVConfig.Log.title,

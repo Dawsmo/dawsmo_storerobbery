@@ -80,59 +80,64 @@ RegisterNetEvent("dawsmo_storerobbery:ClearRobbing", function ()
 end)
 
 function CreateStores()
-    for storeId, value in pairs(Config.Stores) do
-        local storePoint = lib.points.new({
-            coords = value.Coords,
-            distance = 16,
-            storeId = storeId
-        })
-    
-        function storePoint:onEnter()
-            StoreID = self.storeId
-            TriggerServerEvent("dawsmo_storerobbery:InitStoresData", self.storeId, "Enter")
-            lib.callback.await("dawsmo_storerobbery:SpawnNPC", false, self.storeId)
-        end
-    
-        function storePoint:onExit()
-            StoreID = 0
-            TriggerServerEvent("dawsmo_storerobbery:InitStoresData", self.storeId, "Leave")
-        end
-    
-        function storePoint:nearby()
-            if self.currentDistance < 6 and IsPedArmed(PlayerPedId(), 7) and isNotPolice() then
-                Wait(500)
-                if IsPlayerFreeAiming(PlayerId()) or GetPlayerTargetEntity(PlayerId()) and HasEntityClearLosToEntityInFront(PlayerPedId(), currentShopKeeper, 19) then
-                    if DoesEntityExist(currentShopKeeper) then
-                        if CheckCopsOnline() then
-                            if Entity(currentShopKeeper).state.robbing == "Clear" then
-                                TriggerServerEvent("dawsmo_storerobbery:InitRobbing", self.storeId)
-                                TriggerServerEvent('InteractSound_SV:PlayWithinDistance', 30.0, 'burglaralarm', 0.1)
-                                exports['ps-dispatch-esx']:StoreRobbery(0)
-                            elseif Entity(currentShopKeeper).state.robbing == "Robbed" then
-                                local minutesToWait = lib.callback.await("dawsmo_storerobbery:CheckTimer", false, self.storeId)
+    Citizen.CreateThread(function ()
+        for storeId, value in pairs(Store.Stores) do
+            local storePoint = lib.points.new({
+                coords = value.Coords,
+                distance = 18,
+                storeId = storeId
+            })
+        
+            function storePoint:onEnter()
+                StoreID = self.storeId
+                Wait(250)
+                TriggerServerEvent("dawsmo_storerobbery:InitStoresData", self.storeId, "Enter")
+                Wait(250)
+                lib.callback.await("dawsmo_storerobbery:SpawnNPC", false, self.storeId)
+            end
+        
+            function storePoint:onExit()
+                StoreID = 0
+                TriggerServerEvent("dawsmo_storerobbery:InitStoresData", self.storeId, "Leave")
+            end
+        
+            function storePoint:nearby()
+                if self.currentDistance < 6 and IsPedArmed(PlayerPedId(), 7) and isNotPolice() then
+                    Wait(500)
+                    if IsPlayerFreeAiming(PlayerId()) or GetPlayerTargetEntity(PlayerId()) and HasEntityClearLosToEntityInFront(PlayerPedId(), currentShopKeeper, 19) then
+                        if DoesEntityExist(currentShopKeeper) then
+                            if CheckCopsOnline() then
+                                if Entity(currentShopKeeper).state.robbing == "Clear" then
+                                    TriggerServerEvent("dawsmo_storerobbery:InitRobbing", self.storeId)
+                                    TriggerServerEvent('InteractSound_SV:PlayWithinDistance', 30.0, 'burglaralarm', 0.1)
+                                    TriggerEvent("dawsmo_storerobbery:dispatch")
+                                elseif Entity(currentShopKeeper).state.robbing == "Robbed" then
+                                    local minutesToWait = lib.callback.await("dawsmo_storerobbery:CheckTimer", false, self.storeId)
+                                    lib.notify({
+                                        title = locale("Wait_Title"),
+                                        description = (locale("Wait_Desc")):format(minutesToWait),
+                                        type = 'inform',
+                                        position = "top",
+                                        duration = 3000
+                                    })
+                                    Wait(2500)
+                                end
+                            else
                                 lib.notify({
-                                    title = locale("Wait_Title"),
-                                    description = (locale("Wait_Desc")):format(minutesToWait),
+                                    title = locale("Police_Title"),
                                     type = 'inform',
                                     position = "top",
                                     duration = 3000
                                 })
                                 Wait(2500)
                             end
-                        else
-                            lib.notify({
-                                title = locale("Police_Title"),
-                                type = 'inform',
-                                position = "top",
-                                duration = 3000
-                            })
-                            Wait(2500)
                         end
                     end
                 end
             end
-        end
-    end
+        end    
+    end)
+    
 end
 
 function CreateMission()
@@ -141,16 +146,16 @@ function CreateMission()
         return
     end
 
-    if Config.Stores[StoreID].needPropSafe then
+    if Store.Stores[StoreID].needPropSafe then
         local model = 1089807209 -- Model can be either a string or a hash -1189.8787, -770.6376, 17.3261, 218.3645
-        local coords = Config.Stores[StoreID].PropCoord.Coords-- Coords Can either be vector or a table (such as {x = 0, y = 0, z = 0})
-        local Heading = Config.Stores[StoreID].PropCoord.Head + 180 -- Sets the Rotation/Heading the ped spawns at, can be any number
+        local coords = Store.Stores[StoreID].PropCoord.Coords-- Coords Can either be vector or a table (such as {x = 0, y = 0, z = 0})
+        local Heading = Store.Stores[StoreID].PropCoord.Head + 180 -- Sets the Rotation/Heading the ped spawns at, can be any number
         safeObject = CreateObject(model, coords, false, false, false, false, false)
         Wait(500)
         SetEntityRotation(safeObject, 0, 0, Heading)
     end
 
-    for NameLoots, ValueLoots in pairs(Config.Stores[StoreID].Loots) do
+    for NameLoots, ValueLoots in pairs(Store.Stores[StoreID].Loots) do
         markers[NameLoots] = markers[NameLoots] or {}
         for key, value in pairs(ValueLoots) do
 
@@ -238,7 +243,7 @@ RegisterNetEvent("dawsmo_storerobbery:InitRobbing", function (RobData, Reaction)
         TaskPlayAnim(currentShopKeeper, "missheist_agency2ahands_up", "handsup_anxious", 8.0, -8.0, -1, 1, 0, false, false, false)
         Wait(1500)
         if Reaction == "Surrender" then
-            TaskGoStraightToCoord(currentShopKeeper, Config.Stores[StoreID].PositionNPC.Coords, 2.0, -1, Config.Stores[StoreID].PositionNPC.Heading, 0.0)
+            TaskGoStraightToCoord(currentShopKeeper, Store.Stores[StoreID].PositionNPC.Coords, 2.0, -1, Store.Stores[StoreID].PositionNPC.Heading, 0.0)
             Wait(5000)
             lib.requestAnimDict('missheist_agency2ahands_up')
             TaskPlayAnim(currentShopKeeper, "missheist_agency2ahands_up", "handsup_anxious", 8.0, -8.0, -1, 1, 0, false, false, false)
